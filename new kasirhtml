@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kasir & Antrian</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    background:#f4f6f9;
+}
+
+.container{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:20px;
+    padding:20px;
+}
+
+.card{
+    background:#fff;
+    border-radius:15px;
+    padding:20px;
+    box-shadow:0 3px 10px rgba(0,0,0,.1);
+}
+
+h2{
+    margin-bottom:15px;
+    color:#333;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+    border:1px solid #ddd;
+    border-radius:8px;
+}
+
+button{
+    border:none;
+    border-radius:8px;
+    padding:10px 15px;
+    cursor:pointer;
+}
+
+.btn-primary{
+    background:#0d6efd;
+    color:white;
+}
+
+.btn-success{
+    background:#198754;
+    color:white;
+}
+
+.btn-print{
+    background:#fd7e14;
+    color:white;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+
+table th,
+table td{
+    padding:10px;
+    border-bottom:1px solid #ddd;
+}
+
+.total{
+    text-align:right;
+    margin-top:15px;
+    font-size:24px;
+    font-weight:bold;
+    color:#198754;
+}
+
+.antrian{
+    text-align:center;
+}
+
+.nomor{
+    font-size:70px;
+    color:#dc3545;
+    font-weight:bold;
+    margin:20px 0;
+}
+
+.action{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+}
+
+.action button{
+    flex:1;
+}
+
+@media(max-width:768px){
+    .container{
+        grid-template-columns:1fr;
+    }
+
+    .nomor{
+        font-size:50px;
+    }
+
+    .action{
+        flex-direction:column;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- AREA KASIR -->
+    <div class="card">
+
+        <h2>🛒 Sistem Kasir</h2>
+
+        <input type="text" id="barang" placeholder="Nama Barang">
+
+        <input type="number" id="harga" placeholder="Harga">
+
+        <input type="number" id="qty" placeholder="Jumlah">
+
+        <button class="btn-primary" onclick="tambahBarang()">
+            Tambah Barang
+        </button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Barang</th>
+                    <th>Harga</th>
+                    <th>Qty</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+
+            <tbody id="tbodyBarang"></tbody>
+        </table>
+
+        <div class="total">
+            Total : Rp <span id="total">0</span>
+        </div>
+
+        <br>
+
+        <input type="number" id="bayar" placeholder="Jumlah Bayar">
+
+        <div class="total">
+            Kembali : Rp <span id="kembali">0</span>
+        </div>
+
+        <div class="action">
+            <button class="btn-success" onclick="hitungKembalian()">
+                Hitung
+            </button>
+
+            <button class="btn-print" onclick="cetakStruk()">
+                🖨 Cetak Struk
+            </button>
+        </div>
+
+    </div>
+
+    <!-- AREA ANTRIAN -->
+    <div class="card antrian">
+
+        <h2>🎫 Nomor Antrian</h2>
+
+        <div id="nomorAntrian" class="nomor">
+            A001
+        </div>
+
+        <button class="btn-success" onclick="nextQueue()">
+            Panggil Berikutnya
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+let total = 0;
+let nomor = 1;
+let items = [];
+
+function tambahBarang(){
+
+    const barang = document.getElementById("barang").value;
+    const harga = parseInt(document.getElementById("harga").value);
+    const qty = parseInt(document.getElementById("qty").value);
+
+    if(!barang || !harga || !qty){
+        alert("Lengkapi data barang");
+        return;
+    }
+
+    const subtotal = harga * qty;
+
+    items.push({
+        barang,
+        harga,
+        qty,
+        subtotal
+    });
+
+    total += subtotal;
+
+    document.getElementById("tbodyBarang").innerHTML += `
+    <tr>
+      <td>${barang}</td>
+      <td>${harga.toLocaleString()}</td>
+      <td>${qty}</td>
+      <td>${subtotal.toLocaleString()}</td>
+    </tr>
+    `;
+
+    document.getElementById("total").innerText =
+        total.toLocaleString();
+
+    document.getElementById("barang").value="";
+    document.getElementById("harga").value="";
+    document.getElementById("qty").value="";
+}
+
+function hitungKembalian(){
+
+    let bayar = parseInt(
+        document.getElementById("bayar").value || 0
+    );
+
+    let kembali = bayar - total;
+
+    document.getElementById("kembali").innerText =
+        kembali.toLocaleString();
+}
+
+function nextQueue(){
+
+    nomor++;
+
+    document.getElementById("nomorAntrian").innerText =
+        "A" + String(nomor).padStart(3,'0');
+}
+
+function cetakStruk(){
+
+    const bayar =
+    parseInt(document.getElementById("bayar").value || 0);
+
+    const kembali = bayar - total;
+
+    let daftarBarang = "";
+
+    items.forEach(item=>{
+        daftarBarang += `
+        ${item.barang}<br>
+        ${item.qty} x ${item.harga.toLocaleString()}
+        = ${item.subtotal.toLocaleString()}
+        <br><br>
+        `;
+    });
+
+    const tanggal = new Date().toLocaleString();
+
+    const trx =
+    "TRX" + Date.now().toString().slice(-6);
+
+    const isi = `
+    <center>
+    <b>TOKO MAJU JAYA</b><br>
+    Jl. Raya No.123<br>
+    ============================
+    </center>
+
+    No : ${trx}<br>
+    Tgl : ${tanggal}<br>
+    Kasir : ADMIN<br>
+
+    ============================<br>
+
+    ${daftarBarang}
+
+    ============================<br>
+
+    Total : Rp ${total.toLocaleString()}<br>
+    Bayar : Rp ${bayar.toLocaleString()}<br>
+    Kembali : Rp ${kembali.toLocaleString()}<br>
+
+    ============================<br>
+
+    <center>
+    Terima Kasih<br>
+    Selamat Berbelanja
+    </center>
+    `;
+
+    let win = window.open(
+        '',
+        '',
+        'width=350,height=600'
+    );
+
+    win.document.write(`
+        <html>
+        <head>
+        <title>Struk</title>
+        <style>
+        body{
+            width:58mm;
+            font-family:monospace;
+            font-size:12px;
+            padding:5px;
+        }
+        </style>
+        </head>
+        <body>
+        ${isi}
+        </body>
+        </html>
+    `);
+
+    win.document.close();
+    win.print();
+}
+
+</script>
+
+</body>
+</html>
